@@ -12,7 +12,7 @@ import io
 
 warnings.filterwarnings('ignore')
 
-# --- SİSTEMİN GEREKLİ SÜTUNLARI (ŞABLON İÇİN) ---
+# --- 2. SİSTEMİN GEREKLİ SÜTUNLARI (ŞABLON İÇİN) ---
 NUMERIC_COLUMNS = [
     'yas', 'gebelik_haftasi', 
     'korku_vas_baseline', 'korku_olcek_baseline',
@@ -26,7 +26,7 @@ CATEGORIC_COLUMNS = [
 ]
 ALL_REQUIRED_COLUMNS = NUMERIC_COLUMNS + CATEGORIC_COLUMNS
 
-# --- YENİ ŞABLON OLUŞTURMA FONKSİYONU ---
+# --- 3. YENİ ŞABLON OLUŞTURMA FONKSİYONU ---
 @st.cache_data 
 def create_template_excel():
     df_template = pd.DataFrame(columns=ALL_REQUIRED_COLUMNS)
@@ -35,13 +35,8 @@ def create_template_excel():
         df_template.to_excel(writer, sheet_name='Veri_Giris_Sayfasi', index=False)
     return output.getvalue()
 
-# --- YARDIMCI PDF FONKSİYONLARI ---
+# --- 4. YARDIMCI PDF FONKSİYONLARI ---
 def normalize_for_pdf(text):
-    """
-    fpdf kütüphanesinin (temel fontlar) Türkçe karakterleri 
-    doğru basabilmesi için 'latin-1' uyumlu hale getirir.
-    Bu, PDF'in çökmemesi için BİLİNÇLİ bir tercihtir.
-    """
     text = str(text) 
     replacements = {
         'İ': 'I', 'ı': 'i', 'Ş': 'S', 'ş': 's', 'Ğ': 'G', 'ğ': 'g',
@@ -112,7 +107,7 @@ def create_pdf_report(results, charts):
     pdf.set_font("Arial", "", 10)
     pdf.multi_cell(190, 5, normalize_for_pdf(results['final_report_text']))
     
-    # --- Sosyodemografik Grafikler ---
+    # --- Sayfa 3: Sosyodemografik Grafikler (EK A) ---
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(190, 10, "EK A: Sosyodemografik Dagilimlar (Dashboard Grafikleri)", ln=True)
@@ -124,7 +119,7 @@ def create_pdf_report(results, charts):
     except Exception as e:
         pdf.set_text_color(255, 0, 0); pdf.cell(190, 10, normalize_for_pdf(f"Pasta grafikleri olusturulamadi: {e}"), ln=True); pdf.set_text_color(0, 0, 0)
         
-    # --- Denklik Grafikleri ---
+    # --- Sayfa 4: Denklik Grafikleri (EK B) ---
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(190, 10, "EK B: Gorsel Denklik Kontrolu Grafikleri", ln=True)
@@ -136,7 +131,7 @@ def create_pdf_report(results, charts):
     except Exception as e:
         pdf.set_text_color(255, 0, 0); pdf.cell(190, 10, normalize_for_pdf(f"Denklik grafikleri olusturulamadi: {e}"), ln=True); pdf.set_text_color(0, 0, 0)
 
-    # --- Puan Evrimi ve Korelasyon Grafikleri ---
+    # --- Sayfa 5: Puan Evrimi ve Korelasyon Grafikleri (EK C) ---
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(190, 10, "EK C: Puan Evrimi ve Korelasyon Grafikleri", ln=True)
@@ -152,14 +147,8 @@ def create_pdf_report(results, charts):
         
     return bytes(pdf.output(dest='S'))
 
-# --- BACKEND: NİHAİ İSTATİSTİK MOTORU (HESAPLAMA) ---
+# --- 5. BACKEND: NİHAİ İSTATİSTİK MOTORU (HESAPLAMA) ---
 def run_full_analysis(df_data):
-    """
-    (v10.0) Şablondan gelen, sütun adları %100 doğru olan veriyi analiz eder.
-    Dinamik Düzeltme motoru (v6.0) hala aktiftir.
-    (v12.1) Artık 'df_data'nın zaten temizlenmiş olduğunu varsayar.
-    """
-    
     results = {} 
     
     missing_cols = [col for col in ALL_REQUIRED_COLUMNS if col not in df_data.columns]
@@ -167,7 +156,6 @@ def run_full_analysis(df_data):
         return {'error': f"HATA: Yüklediğiniz Excel dosyası bir Şablon dosyası değil. Şu sütunlar eksik: {', '.join(missing_cols)}. Lütfen 'Boş Excel Şablonunu İndir' butonunu kullanarak doğru şablonu indirin ve verilerinizi oraya girin."}
     
     df_cleaned = df_data.copy()
-    
     for col in NUMERIC_COLUMNS:
         df_cleaned[col] = pd.to_numeric(df_cleaned[col], errors='coerce')
         
@@ -251,7 +239,7 @@ def run_full_analysis(df_data):
     elif results['faz1_is_denk'] and not faz2_basarili:
         results['final_report_title'] = "NİHAİ SONUÇ: Etkisiz Müdahale (Nötr Bulgular)"
         final_report_text = "Yorum: Araştırma, gruplar arasında tam denklik (FAZ 1) sağlamış olmasına rağmen, hipotez testleri (FAZ 2) müdahalenin istatistiksel olarak anlamlı bir fark yaratmadığını (p > 0.05) göstermiştir. Bu bulgular, nefes egzersizi müdahalesinin, bu çalışmanın koşulları ve örneklemi üzerinde ölçülebilir bir etkiye sahip olmadığını göstermektedir."
-    else: 
+    else: # not faz1_is_denk and not faz2_basarili
         results['final_report_title'] = "NİHAİ SONUÇ: Sonuçsuz Bulgular (Geçersiz)"
         final_report_text = "Yorum: Araştırma hem FAZ 1 denklik testlerinde başarısız olmuş hem de FAZ 2 hipotez testlerinde anlamlı bir sonuç üretememiştir. Gruplar arasındaki başlangıç farkları ve müdahalenin etkisizliği nedeniyle, araştırma sonuçları 'geçersiz' (inconclusive) kabul edilmelidir."
     
@@ -259,7 +247,7 @@ def run_full_analysis(df_data):
     results['error'] = None
     return results
 
-# --- BACKEND: TÜM GÖRSELLERİ OLUŞTURMA MOTORU ---
+# --- 6. BACKEND: TÜM GÖRSELLERİ OLUŞTURMA MOTORU ---
 def generate_all_charts(df_charts):
     charts = {}
     
@@ -267,7 +255,7 @@ def generate_all_charts(df_charts):
     for col in CATEGORIC_COLUMNS:
         df_charts_norm[col] = df_charts_norm[col].astype(str).apply(normalize_for_pdf)
 
-    # --- Frekans Tabloları & Pasta Grafikler ---
+    # --- BÖLÜM 1: Frekans Tabloları & Pasta Grafikler ---
     df_pie = df_charts_norm['medeni_durum'].value_counts().reset_index()
     charts['fig_pie_medeni'] = px.pie(df_pie, names='medeni_durum', values='count', hole=0.3, title=normalize_for_pdf("Medeni Durum"))
     charts['fig_pie_medeni'].update_traces(textposition='inside', textinfo='percent+label')
@@ -289,20 +277,20 @@ def generate_all_charts(df_charts):
     charts['fig_pie_plan'].update_traces(textposition='inside', textinfo='percent+label')
     charts['fig_pie_plan'].update_layout(showlegend=False, margin=dict(t=30, b=20, l=20, r=20))
     
-    # --- Sayısal Denklik (Kutu Grafikleri) ---
+    # --- BÖLÜM 2: Sayısal Denklik (Kutu Grafikleri) ---
     charts['fig_yas_box'] = px.box(df_charts_norm, x='grup', y='yas', color='grup', title=normalize_for_pdf('Yaş Dağılımı (Gruplara Göre)'), points="all")
     charts['fig_yas_box'].update_layout(showlegend=False)
     
     charts['fig_hafta_box'] = px.box(df_charts_norm, x='grup', y='gebelik_haftasi', color='grup', title=normalize_for_pdf('Gebelik Haftası Dağılımı (Gruplara Göre)'), points="all")
     charts['fig_hafta_box'].update_layout(showlegend=False)
 
-    # --- Kategorik Denklik (Sütun Grafikleri) ---
+    # --- BÖLÜM 3: Kategorik Denklik (Sütun Grafikleri) ---
     charts['fig_egitim_bar'] = px.histogram(df_charts_norm, x='egitim_durumu', color='grup', barmode='group', title=normalize_for_pdf('Eğitim Durumu (Gruplara Göre)'),
                                             category_orders={'egitim_durumu': ['Ilkokul', 'Lise', 'Universite']})
     
     charts['fig_dogum_bar'] = px.histogram(df_charts_norm, x='dogum_baslangici', color='grup', barmode='group', title=normalize_for_pdf('Doğum Başlangıcı (Gruplara Göre)'))
     
-    # --- Ortalama Puan Evrimi (Çizgi Grafikler) ---
+    # --- BÖLÜM 4: Ortalama Puan Evrimi (Çizgi Grafikler) ---
     df_mean = df_charts_norm.groupby('grup')[['korku_vas_baseline', 'korku_vas_4cm', 'korku_vas_8cm']].mean().reset_index()
     zaman_etiketleri_vas = {'korku_vas_baseline': 'Baseline', 'korku_vas_4cm': '4cm', 'korku_vas_8cm': '8cm'}
     df_vas_long = df_mean.melt(id_vars='grup', value_vars=zaman_etiketleri_vas.keys(), var_name='Zaman', value_name='Ortalama Puan (VAS)')
@@ -310,7 +298,7 @@ def generate_all_charts(df_charts):
     charts['fig_vas_line'] = px.line(df_vas_long, x='Zaman', y='Ortalama Puan (VAS)', color='grup', title=normalize_for_pdf('Ortalama VAS (Korku) Puanı Evrimi'), markers=True,
                                      category_orders={'Zaman': ['Baseline', '4cm', '8cm']})
 
-    # --- Likert-tipi Görselleştirme ---
+    # --- BÖLÜM 5: Likert-tipi Görselleştirme ---
     vas_bins = [0, 4, 7, 10.1]; vas_labels = [normalize_for_pdf('Düşük Korku (0-3)'), normalize_for_pdf('Orta Korku (4-6)'), normalize_for_pdf('Yüksek Korku (7-10)')]
     df_likert = df_charts_norm[['grup', 'korku_vas_baseline', 'korku_vas_4cm', 'korku_vas_8cm']].copy()
     df_likert['Baseline'] = pd.cut(df_likert['korku_vas_baseline'], bins=vas_bins, labels=vas_labels, right=False)
@@ -321,14 +309,14 @@ def generate_all_charts(df_charts):
     charts['fig_stacked'] = px.histogram(df_long, x='Olum Zamani', color='Korku Seviyesi', facet_col='grup', barmode='stack', barnorm='percent', title=normalize_for_pdf('Korku Seviyelerinin (VAS) Zamana Göre Değişimi'),
                                          color_discrete_map=color_map, category_orders={"Olum Zamani": ['Baseline', '4cm (Latent Son)', '8cm (Aktif Son)'], "Korku Seviyesi": vas_labels}) 
 
-    # --- Korelasyon Isı Haritası ---
+    # --- BÖLÜM 6: Korelasyon Isı Haritası ---
     corr_cols_in_df = [col for col in NUMERIC_COLUMNS if col in df_charts_norm.columns]
     corr_matrix = df_charts_norm[corr_cols_in_df].corr()
     charts['fig_heatmap'] = px.imshow(corr_matrix, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu_r', zmin=-1, zmax=1, title=normalize_for_pdf("Sayısal Değişkenler Korelasyon Isı Haritası"))
     
     return charts
 
-# --- FRONTEND: TÜM ARAYÜZ FONKSİYONLARI ---
+# --- 7. FRONTEND: TÜM ARAYÜZ FONKSİYONLARI ---
 
 def display_kılavuz_tab():
     """ (v12.2) Kılavuz sekmesini (içi dolu metinlerle) çizer."""
@@ -520,6 +508,7 @@ def display_analysis_tab(analysis_results, charts_for_pdf):
             
             st.header("Raporu Dışa Aktar")
             try:
+                # (v12.0) PDF BUTONU ARTIK GRAFİKLERİ DE GÖNDERİYOR
                 pdf_bytes = create_pdf_report(analysis_results, charts_for_pdf)
                 st.download_button(
                     label="Kapsamlı Raporu PDF Olarak İndir (Metin + Grafikler)",
@@ -543,9 +532,11 @@ def clear_session_state():
         if key in st.session_state:
             del st.session_state[key]
 
-# --- ANA UYGULAMA MANTIĞI (v12.2) ---
+# --- 8. ANA UYGULAMA MANTIĞI (v12.2) ---
 
 st.set_page_config(page_title="Ebelik Araştırması Analiz Motoru", layout="wide")
+
+# --- Kenar Çubuğu (Sidebar) ---
 st.sidebar.title("🤰 Ebelik Araştırması")
 st.sidebar.header("Adım 1: Şablonu İndirin")
 excel_buffer = create_template_excel()
@@ -571,8 +562,42 @@ start_analysis = st.sidebar.button("Analizi Başlat", type="primary", use_contai
 st.sidebar.divider()
 st.sidebar.info("v12.2 - Uzman Sistem (Temiz & Kapsamlı Rapor)")
 
+# --- Ana Arayüz ---
 st.title("Ebelik Araştırması İstatistiksel Analiz Raporu")
 
+# --- v12.3 Eklentisi: Footer ---
+footer_html = """
+<style>
+.footer {
+    position: fixed;
+    right: 15px; /* Kenardan biraz boşluk */
+    bottom: 10px;
+    width: auto;
+    text-align: right;
+    font-size: 12px;
+    color: #888; /* Düşük görünürlüklü gri */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.footer a {
+    color: #0077B5; /* LinkedIn mavisine yakın bir renk */
+    text-decoration: none; /* Alt çizgiyi kaldır */
+}
+.footer a:hover {
+    text-decoration: underline; /* Üzerine gelince altını çiz */
+}
+</style>
+
+<div class="footer">
+    Geliştirici: Oğuzhan Yazıcı<br>
+    © 2025 Tüm hakları saklıdır. | 
+    <a href="https://www.linkedin.com/in/o%C4%9Fuzhan-yaz%C4%B1c%C4%B1-2b09aa327/" target="_blank">LinkedIn Profilim</a>
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
+# --- Footer Eklentisi Bitişi ---
+
+
+# 3 Sekmeyi her zaman göster
 tab_kılavuz, tab_dashboard, tab_analiz = st.tabs([
     "ℹ️ Protokol Kılavuzu", 
     "📊 Veri Seti Özeti (Dashboard)",
@@ -603,7 +628,6 @@ if start_analysis:
                 with st.spinner("İstatistiksel analiz motoru çalıştırılıyor... (Dinamik Düzeltme yapılıyor...)"):
                     st.session_state.analysis_results = run_full_analysis(df_cleaned)
                 
-                
                 if st.session_state.analysis_results.get('error') is None:
                     with st.spinner("Tüm dashboard grafikleri oluşturuluyor... (Bu işlem 10-15 saniye sürebilir...)"):
                         st.session_state.charts_dict = generate_all_charts(df_cleaned)
@@ -618,12 +642,11 @@ if start_analysis:
     else:
         st.warning("Lütfen 'Analizi Başlat' butonuna basmadan önce Adım 2'de bir dosya yükleyin.")
 
-
+# --- Sekmeleri Doldurma ---
 if 'analysis_results' in st.session_state and 'df_for_tabs' in st.session_state:
     results = st.session_state.analysis_results
     df_display = st.session_state.df_for_tabs
     charts = st.session_state.get('charts_dict', {}) 
-    
     
     if results.get('error'):
         with tab_analiz: 
