@@ -1,18 +1,3 @@
-"""
-EBELİK ARAŞTIRMASI (RCT) ANALİZ PROJESİ v12.3 (Uzman Sistem - İmza Eklentili)
-Bu uygulama, bir "Uzman Sistem" olarak çalışır.
-
-v12.3 GÜNCELLEMESİ (Nihai Sürüm):
-- (Fikir) Kullanıcının talebi üzerine, ekranın sağ altına 
-  "Geliştirici: Oğuzhan Yazıcı", "© Tüm hakları saklıdır" ve 
-  "LinkedIn" profil linkini içeren bir "footer" (alt bilgi) eklendi.
-- Bu ekleme, `st.markdown` ve 'position: fixed' HTML/CSS kodu 
-  kullanılarak yapıldı.
-- Önceki tüm özellikler (v10.0 Şablon, v8.0 Dashboard, 
-  v6.0 Dinamik Düzeltme, v12.2 Veri Temizleme) korunmuştur.
-"""
-
-# --- 1. Gerekli Kütüphaneler ---
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -21,9 +6,9 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from fpdf import FPDF
 import plotly.express as px 
-import plotly.io as pio # Grafikleri resme dönüştürmek için
+import plotly.io as pio 
 import warnings
-import io # Excel şablonunu ve resimleri hafızada tutmak için
+import io 
 
 warnings.filterwarnings('ignore')
 
@@ -711,3 +696,4 @@ else:
         st.info("Veri setinin görsel özetini görmek için lütfen sol menüdeki adımları izleyin.")
     with tab_analiz:
         st.info("İstatistiksel analiz raporunu görmek için lütfen sol menüdeki adımları izleyin.")
+
