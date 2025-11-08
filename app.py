@@ -1,3 +1,18 @@
+"""
+EBELİK ARAŞTIRMASI (RCT) ANALİZ PROJESİ v12.3 (Uzman Sistem - İmza Eklentili)
+Bu uygulama, bir "Uzman Sistem" olarak çalışır.
+
+v12.3 GÜNCELLEMESİ (Nihai Sürüm):
+- (Fikir) Kullanıcının talebi üzerine, ekranın sağ altına 
+  "Geliştirici: Oğuzhan Yazıcı", "© Tüm hakları saklıdır" ve 
+  "LinkedIn" profil linkini içeren bir "footer" (alt bilgi) eklendi.
+- Bu ekleme, `st.markdown` ve 'position: fixed' HTML/CSS kodu 
+  kullanılarak yapıldı.
+- Önceki tüm özellikler (v10.0 Şablon, v8.0 Dashboard, 
+  v6.0 Dinamik Düzeltme, v12.2 Veri Temizleme) korunmuştur.
+"""
+
+# --- 1. Gerekli Kütüphaneler ---
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,9 +21,9 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from fpdf import FPDF
 import plotly.express as px 
-import plotly.io as pio 
+import plotly.io as pio # Grafikleri resme dönüştürmek için
 import warnings
-import io 
+import io # Excel şablonunu ve resimleri hafızada tutmak için
 
 warnings.filterwarnings('ignore')
 
@@ -565,34 +580,67 @@ st.sidebar.info("v12.2 - Uzman Sistem (Temiz & Kapsamlı Rapor)")
 # --- Ana Arayüz ---
 st.title("Ebelik Araştırması İstatistiksel Analiz Raporu")
 
-# --- v12.3 Eklentisi: Footer ---
-footer_html = """
+# --- v12.4 Eklentisi: Footer (Buzlu Cam - Ortalanmış) ---
+# (v12.3'teki bloğun yerine bunu yapıştırın)
+
+# ★★★ LÜTFEN BURADAKİ LİNKİ KENDİ LİNKİNİZLE DEĞİŞTİRİN ★★★
+linkedin_url = "https://www.linkedin.com/in/o%C4%9Fuzhan-yaz%C4%B1c%C4%B1-2b09aa327/"
+# ★★★ DEĞİŞİKLİĞİ BURADA YAPIN ★★★
+
+footer_html = f"""
 <style>
-.footer {
+.footer {{
     position: fixed;
-    right: 15px; /* Kenardan biraz boşluk */
+    left: 50%;
+    transform: translateX(-50%);
     bottom: 10px;
-    width: auto;
-    text-align: right;
+    width: auto; 
+    
+    /* ★★★ YENİ EKLEMELER (Karışmayı Önlemek İçin) ★★★ */
+    /* Streamlit'in kendi tema renklerini kullanır (Açık/Koyu mod uyumlu) */
+    /* Yarı şeffaf bir arka plan */
+    background-color: var(--streamlit-theme-secondary-background-color, rgba(240, 242, 246, 0.8));
+    
+    /* "Buzlu Cam" efekti: Arkadaki içeriği bulanıklaştır */
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); /* Safari uyumluluğu */
+    
+    padding: 10px 25px; /* İç boşluk (kutuyu biraz büyütür) */
+    border-radius: 15px; /* Kıvrımlı kenarlar */
+    
+    /* Kutuya hafif bir çerçeve ekle */
+    border: 1px solid var(--streamlit-theme-gray-20, #DDDDDD);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Hafif bir gölge */
+    /* ★★★ Bitiş ★★★ */
+    
+    text-align: center;
     font-size: 12px;
-    color: #888; /* Düşük görünürlüklü gri */
+    /* Metin rengini Streamlit'in ana metin rengiyle eşleştir */
+    color: var(--streamlit-theme-text-color, #31333F); 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-.footer a {
-    color: #0077B5; /* LinkedIn mavisine yakın bir renk */
-    text-decoration: none; /* Alt çizgiyi kaldır */
-}
-.footer a:hover {
-    text-decoration: underline; /* Üzerine gelince altını çiz */
-}
+    z-index: 1000;
+}}
+.footer a {{
+    color: #0077B5; /* LinkedIn Rengi */
+    text-decoration: none;
+}}
+.footer a:hover {{
+    text-decoration: underline;
+}}
 </style>
 
 <div class="footer">
     Geliştirici: Oğuzhan Yazıcı<br>
     © 2025 Tüm hakları saklıdır. | 
-    <a href="https://www.linkedin.com/in/o%C4%9Fuzhan-yaz%C4%B1c%C4%B1-2b09aa327/" target="_blank">LinkedIn Profilim</a>
+    <a href="{linkedin_url}" target="_blank">LinkedIn Profilim</a>
 </div>
 """
+st.markdown(footer_html, unsafe_allow_html=True)
+# --- Footer Eklentisi Bitişi ---
+st.markdown(footer_html, unsafe_allow_html=True)
+# --- Footer Eklentisi Bitişi ---
+st.markdown(footer_html, unsafe_allow_html=True)
+# --- Footer Eklentisi Bitişi ---
 st.markdown(footer_html, unsafe_allow_html=True)
 # --- Footer Eklentisi Bitişi ---
 
